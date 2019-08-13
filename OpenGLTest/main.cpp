@@ -1,10 +1,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <vector>
 #include <iostream>
 #include <stdexcept>
 
 #include "Shader.h"
+#include "VertexObjectsUtils.h"
 
 const uint32_t WIDTH = 1024;
 const uint32_t HEIGHT = 768;
@@ -24,12 +26,21 @@ public:
 private:
 	Shader shader;
 	GLFWwindow* window;
-	float vertices[9] = {
+	std::vector<float> vertices = {
 		-0.5f, -0.5f, 0.0f,
 		0.5f, -0.5f, 0.0f,
-		0.0f, 0.5f, 0.0f
+		-0.5f, 0.5f, 0.0f,
+		0.5f, 0.5f, 0.0f
 	};
-	unsigned int VBO, VAO, programID;
+
+	std::vector<int> indexes = {
+		0, 1, 2,
+		2, 3, 1
+	};
+	unsigned int EBO, VBO, VAO,
+		programID;
+
+	VertexObjectsUtils vertexObjectsUtils;
 
 	void initWindow() {
 		if (!glfwInit()) {
@@ -59,18 +70,8 @@ private:
 		}
 
 		programID = shader.loadShader("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
-		glUseProgram(programID);
 
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		// 1. bind Vertex Array Object
-		glBindVertexArray(VAO);
-		// 2. copy our vertices array in a buffer for OpenGL to use
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		// 3. then set our vertex attributes pointers
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-		glEnableVertexAttribArray(0);
+		vertexObjectsUtils.initBuffers(&VAO, &VBO, &EBO);
 	}
 
 	void mainLoop() {
@@ -80,10 +81,17 @@ private:
 			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 
+			vertexObjectsUtils.bindBuffers(&VAO, &VBO, &EBO, vertices, indexes);
 			glUseProgram(programID);
+			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+			/*
+			vertexObjectsUtils.bindBuffers(&VAO, &VBO, nullptr, vertices2, nullptr);
+			glUseProgram(programID2);
 			glBindVertexArray(VAO);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
-
+			*/
 			glfwPollEvents();
 			glfwSwapBuffers(window);
 		}
@@ -106,8 +114,7 @@ int main() {
 	OpenGLApp app;
 	try {
 		app.run();
-	}
-	catch (const std::exception& e) {
+	} catch (const std::exception& e) {
 		std::cout << e.what() << std::endl;
 	}
 	return 0;
