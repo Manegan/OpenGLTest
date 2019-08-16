@@ -24,20 +24,18 @@ public:
 	}
 
 private:
-	Shader shader;
+	Shader* shader = NULL;
 	GLFWwindow* window;
 	std::vector<float> vertices = {
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		-0.5f, 0.5f, 0.0f,
-		0.5f, 0.5f, 0.0f
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+		-0.5f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f
+		//0.5f, 0.5f, 0.0f
 	};
 
 	std::vector<int> indexes = {
-		0, 1, 2,
-		2, 3, 1
 	};
-	unsigned int EBO, VBO, VAO,
+	unsigned int VBO, VAO,
 		programID;
 
 	VertexObjectsUtils vertexObjectsUtils;
@@ -69,9 +67,10 @@ private:
 			throw std::runtime_error("Failed to initialize GLAD");
 		}
 
-		programID = shader.loadShader("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
+		shader = new Shader("SimpleVertexShader.vert", "SimpleFragmentShader.frag");
 
-		vertexObjectsUtils.initBuffers(&VAO, &VBO, &EBO);
+		vertexObjectsUtils.initBuffers(&VAO, &VBO, NULL);
+		vertexObjectsUtils.bindBuffers(&VAO, &VBO, NULL, vertices, indexes);
 	}
 
 	void mainLoop() {
@@ -81,19 +80,13 @@ private:
 			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			vertexObjectsUtils.bindBuffers(&VAO, &VBO, &EBO, vertices, indexes);
-			glUseProgram(programID);
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+			shader->use();
 
-			/*
-			vertexObjectsUtils.bindBuffers(&VAO, &VBO, nullptr, vertices2, nullptr);
-			glUseProgram(programID2);
 			glBindVertexArray(VAO);
 			glDrawArrays(GL_TRIANGLES, 0, 3);
-			*/
-			glfwPollEvents();
+
 			glfwSwapBuffers(window);
+			glfwPollEvents();
 		}
 	}
 
